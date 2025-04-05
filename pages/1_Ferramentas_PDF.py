@@ -1,3 +1,5 @@
+# tools-p-7bpm/pages/1_Ferramentas_PDF.py
+
 import streamlit as st
 from modules.pdf_transformer import PDFTransformer
 import os
@@ -9,23 +11,22 @@ import logging
 # from PyPDF2 import PdfReader # REMOVIDO - Não é mais necessário aqui
 
 # --- Constantes de Limite de Tamanho ---
-MAX_SIZE_BYTES = 200 * 1024 * 1024
-COMPRESS_MIN_SIZE_BYTES = 1 * 1024 * 1024
+# Limite máximo aumentado para 500 MB
+MAX_SIZE_BYTES = 500 * 1024 * 1024
+COMPRESS_MIN_SIZE_BYTES = 1 * 1024 * 1024 # 1 MB (Mínimo para compressão)
 MAX_SIZE_MB = MAX_SIZE_BYTES / (1024 * 1024)
 COMPRESS_MIN_SIZE_MB = COMPRESS_MIN_SIZE_BYTES / (1024 * 1024)
 
 # --- Função de Validação ---
+# Valida APENAS o tamanho MÁXIMO GERAL
 def validate_file_size(uploaded_file, operation_type):
     if not uploaded_file: return False
     file_size = uploaded_file.size
     file_size_mb = file_size / (1024 * 1024)
-    if file_size > MAX_SIZE_BYTES:
+    if file_size > MAX_SIZE_BYTES: # Usa o novo MAX_SIZE_BYTES (500MB)
         st.error(f"Arquivo muito grande ({file_size_mb:.1f} MB). O limite máximo é de {MAX_SIZE_MB:.0f} MB.")
         return False
-    if operation_type == "Comprimir PDF" and file_size < COMPRESS_MIN_SIZE_BYTES:
-        st.error(f"Arquivo muito pequeno ({file_size_mb:.1f} MB). A compressão requer no mínimo {COMPRESS_MIN_SIZE_MB:.0f} MB.")
-        return False
-    return True
+    return True # Retorna True se estiver dentro do limite máximo
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -33,7 +34,7 @@ st.set_page_config(
     layout="centered", initial_sidebar_state="collapsed"
 )
 
-# --- CSS Customizado ---
+# --- CSS Customizado (RESTAURADO) ---
 st.write("""
 <style>
     /* Esconde a sidebar */
@@ -95,7 +96,6 @@ st.markdown("Selecione a operação desejada e faça upload dos arquivos.")
 # --- Inicialização e Seleção ---
 pdf_processor = PDFTransformer()
 
-# Opção "Organizar Páginas PDF" removida
 operation_type = st.selectbox(
     "Escolha a operação PDF:",
     (
@@ -103,23 +103,23 @@ operation_type = st.selectbox(
         "Comprimir PDF",
         "Tornar PDF Pesquisável (OCR)",
         "Juntar PDFs",
-        # "Organizar Páginas PDF", # <<< REMOVIDO
         "Imagens para PDF",
         "PDF para DOCX",
         "PDF para Imagens (PNG)",
-        "Documento (DOCX, DOC, ODT, TXT) para PDF"
+        "Documento (DOCX, DOC, ODT, TXT) para PDF",
+        "Planilha (XLSX, CSV, ODS) para PDF"
     ),
     key="operation_select"
 )
 
-# --- Lógica e UI ---
+# --- Lógica e UI (com limites atualizados) ---
 uploaded_file = None
 uploaded_files = []
 output_file_data = None
 output_filename = "resultado"
 output_mimetype = "application/octet-stream"
 processing_triggered = False
-temp_dir = None
+temp_dir_path = None
 
 upload_placeholder = st.empty()
 options_placeholder = st.empty()
@@ -135,36 +135,44 @@ try:
                 type="pdf", key="pdf_upload_compress"
             )
         if uploaded_file:
-            if validate_file_size(uploaded_file, operation_type):
-                with options_placeholder.container():
-                    compression_level = st.slider(
-                        "Nível de compressão (0=Menor, 4=Maior)", 0, 4, 3, key="compress_level",
-                        help="0: Qualidade alta, menor compressão. 4: Qualidade baixa, maior compressão."
+            file_size_mb = uploaded_file.size / (1024 * 1024)
+            # Verificação RÍGIDA do tamanho MÍNIMO
+            if uploaded_file.size < COMPRESS_MIN_SIZE_BYTES:
+                 options_placeholder.error(f"Arquivo muito pequeno ({file_size_mb:.1f} MB). A compressão só é permitida para arquivos com mais de {COMPRESS_MIN_SIZE_MB:.0f} MB.")
+            else:
+                # Verifica o tamanho MÁXIMO
+                if validate_file_size(uploaded_file, operation_type): # Verifica MAX_SIZE_BYTES (500MB)
+                    with options_placeholder.container():
+                        compression_level = st.slider(
+                            "Nível de compressão (0=Menor, 4=Maior)", 0, 4, 3, key="compress_level",
+                            help="0: Qualidade alta, menor compressão. 4: Qualidade baixa, maior compressão."
+                        )
+                    processing_triggered = button_placeholder.button(
+                        "Comprimir PDF", key="compress_btn", use_container_width=True,
+                        disabled=not pdf_processor.gs_available
                     )
-                processing_triggered = button_placeholder.button(
-                    "Comprimir PDF", key="compress_btn", use_container_width=True,
-                    disabled=not pdf_processor.gs_available
-                )
-                if not pdf_processor.gs_available: options_placeholder.warning("Ghostscript não detectado.")
-            if processing_triggered and pdf_processor.gs_available:
-                pdf_bytes = uploaded_file.getvalue()
-                with result_placeholder, st.spinner(f"Comprimindo PDF (Nível {compression_level})..."):
-                    success, processed_bytes, original_size, final_size = pdf_processor.process_compression_ocr(
-                        pdf_bytes, compression_level=compression_level, apply_ocr=False
-                    )
-                    if success and processed_bytes:
-                        st.success("✅ PDF comprimido com sucesso!")
-                        output_filename = f"comprimido_{uploaded_file.name}"
-                        output_mimetype = "application/pdf"; output_file_data = processed_bytes
-                        reduction_percent = (1 - (final_size / original_size)) * 100 if original_size > 0 else 0
-                        st.markdown('<div class="compress-metrics">', unsafe_allow_html=True)
-                        cols = st.columns(3)
-                        with cols[0]: st.metric("Tam. Original", f"{original_size:.2f} MB")
-                        with cols[1]: st.metric("Tam. Final", f"{final_size:.2f} MB", f"-{reduction_percent:.1f}%" if reduction_percent >= 0.1 else None, delta_color="inverse")
-                        with cols[2]: st.metric("Economia", f"{(original_size - final_size):.2f} MB")
-                        st.progress(min(reduction_percent / 100, 1.0))
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    else: st.error("❌ Falha ao comprimir o PDF.")
+                    if not pdf_processor.gs_available: options_placeholder.error("❌ Ghostscript não detectado. Compressão indisponível.")
+
+                    if processing_triggered and pdf_processor.gs_available:
+                        pdf_bytes = uploaded_file.getvalue()
+                        with result_placeholder, st.spinner(f"Comprimindo PDF (Nível {compression_level})..."):
+                            # ... (lógica de compressão e métricas) ...
+                            success, processed_bytes, original_size, final_size = pdf_processor.process_compression_ocr(
+                                pdf_bytes, compression_level=compression_level, apply_ocr=False
+                            )
+                            if success and processed_bytes:
+                                st.success("✅ PDF comprimido com sucesso!")
+                                output_filename = f"comprimido_{uploaded_file.name}"
+                                output_mimetype = "application/pdf"; output_file_data = processed_bytes
+                                reduction_percent = (1 - (final_size / original_size)) * 100 if original_size > 0 else 0
+                                st.markdown('<div class="compress-metrics">', unsafe_allow_html=True)
+                                cols = st.columns(3)
+                                with cols[0]: st.metric("Tam. Original", f"{original_size:.2f} MB")
+                                with cols[1]: st.metric("Tam. Final", f"{final_size:.2f} MB", f"-{reduction_percent:.1f}%" if reduction_percent >= 0.1 else None, delta_color="inverse")
+                                with cols[2]: st.metric("Economia", f"{(original_size - final_size):.2f} MB")
+                                st.progress(min(reduction_percent / 100, 1.0))
+                                st.markdown('</div>', unsafe_allow_html=True)
+                            else: st.error("❌ Falha ao comprimir o PDF.")
 
     # --- OCR ---
     elif operation_type == "Tornar PDF Pesquisável (OCR)":
@@ -178,12 +186,13 @@ try:
                      "Aplicar OCR", key="ocr_btn", use_container_width=True,
                      disabled=not pdf_processor.ocrmypdf_installed
                  )
-                 if not pdf_processor.ocrmypdf_installed: options_placeholder.warning("OCRmyPDF não detectado.")
+                 if not pdf_processor.ocrmypdf_installed: options_placeholder.error("❌ OCRmyPDF não detectado. Função indisponível.")
             if processing_triggered and pdf_processor.ocrmypdf_installed:
+                 # ... (lógica OCR) ...
                  pdf_bytes = uploaded_file.getvalue()
-                 with result_placeholder, st.spinner("Aplicando OCR ao PDF..."):
+                 with result_placeholder, st.spinner("Aplicando OCR ao PDF... Isso pode demorar."):
                      success, processed_bytes, original_size, final_size = pdf_processor.process_compression_ocr(
-                         pdf_bytes, compression_level=-1, apply_ocr=True, ocr_language='por' # Comp level -1 para não comprimir
+                         pdf_bytes, compression_level=-1, apply_ocr=True, ocr_language='por'
                      )
                      if success and processed_bytes:
                          st.success("✅ OCR aplicado com sucesso! O PDF agora é pesquisável.")
@@ -201,15 +210,21 @@ try:
             )
         if uploaded_files and len(uploaded_files) >= 2:
             total_size = sum(f.size for f in uploaded_files)
-            if total_size > MAX_SIZE_BYTES: st.error(f"Tamanho total excede {MAX_SIZE_MB:.0f} MB.")
+            if total_size > MAX_SIZE_BYTES:
+                st.error(f"Tamanho total ({total_size / (1024*1024):.1f} MB) excede o limite de {MAX_SIZE_MB:.0f} MB.")
             else:
-                with options_placeholder.container():
+                 with options_placeholder.container():
+                    # ... (lógica de ordenação) ...
                     st.write("**Ordem de Junção:**")
-                    for i, f in enumerate(uploaded_files): st.write(f"{i+1}. {f.name} ({f.size / 1024 / 1024:.1f} MB)")
-                    st.caption("A ordem é baseada na sequência de upload.")
-                processing_triggered = button_placeholder.button("Juntar PDFs", key="merge_btn", use_container_width=True)
+                    ordered_files = sorted(uploaded_files, key=lambda f: f.name)
+                    st.caption("Atenção: A ordem final será alfabética pelo nome do arquivo.")
+                    for i, f in enumerate(ordered_files):
+                         st.write(f"{i+1}. {f.name} ({f.size / 1024 / 1024:.1f} MB)")
+                 processing_triggered = button_placeholder.button("Juntar PDFs", key="merge_btn", use_container_width=True)
+
             if processing_triggered and total_size <= MAX_SIZE_BYTES:
-                pdf_byte_streams = [file.getvalue() for file in uploaded_files]
+                 # ... (lógica de merge) ...
+                pdf_byte_streams = [file.getvalue() for file in ordered_files]
                 with result_placeholder, st.spinner(f"Juntando {len(pdf_byte_streams)} PDFs..."):
                     success, result_bytes, message = pdf_processor.merge_pdfs(pdf_byte_streams)
                     if success and result_bytes:
@@ -220,7 +235,6 @@ try:
         elif uploaded_files and len(uploaded_files) < 2:
             options_placeholder.warning("Selecione pelo menos 2 arquivos PDF para juntar.")
 
-    # --- Bloco "Organizar Páginas PDF" REMOVIDO ---
 
     # --- IMAGES TO PDF ---
     elif operation_type == "Imagens para PDF":
@@ -231,20 +245,27 @@ try:
             )
         if uploaded_files:
             total_size = sum(f.size for f in uploaded_files)
-            if total_size > MAX_SIZE_BYTES: st.error(f"Tamanho total excede {MAX_SIZE_MB:.0f} MB.")
-            else: processing_triggered = button_placeholder.button("Converter Imagens para PDF", key="img_to_pdf_btn", use_container_width=True)
+            if total_size > MAX_SIZE_BYTES:
+                 st.error(f"Tamanho total ({total_size / (1024*1024):.1f} MB) excede o limite de {MAX_SIZE_MB:.0f} MB.")
+            else:
+                processing_triggered = button_placeholder.button("Converter Imagens para PDF", key="img_to_pdf_btn", use_container_width=True)
             if processing_triggered and total_size <= MAX_SIZE_BYTES:
-                with result_placeholder, st.spinner("Convertendo imagens para PDF..."):
+                # ... (lógica de conversão de imagem) ...
+                 with result_placeholder, st.spinner("Convertendo imagens para PDF..."):
                     image_bytes_list = [file.getvalue() for file in uploaded_files]
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf: output_pdf_path = temp_pdf.name
-                    success = pdf_processor.image_to_pdf(image_bytes_list, output_pdf_path)
-                    if success and os.path.exists(output_pdf_path):
-                        st.success("✅ Imagens convertidas para PDF!")
-                        output_filename = f"imagens_convertidas_{int(time.time())}.pdf"
-                        output_mimetype = "application/pdf";
-                        with open(output_pdf_path, "rb") as f: output_file_data = f.read()
-                    else: st.error("❌ Falha ao converter imagens.")
-                    if os.path.exists(output_pdf_path): os.unlink(output_pdf_path)
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf_file:
+                        output_pdf_path = temp_pdf_file.name
+                    try:
+                        success = pdf_processor.image_to_pdf(image_bytes_list, output_pdf_path)
+                        if success and os.path.exists(output_pdf_path) and os.path.getsize(output_pdf_path) > 0:
+                            st.success("✅ Imagens convertidas para PDF!")
+                            output_filename = f"imagens_convertidas_{int(time.time())}.pdf"
+                            output_mimetype = "application/pdf";
+                            with open(output_pdf_path, "rb") as f: output_file_data = f.read()
+                        else: st.error("❌ Falha ao converter imagens.")
+                    finally:
+                        if os.path.exists(output_pdf_path): os.unlink(output_pdf_path)
+
 
     # --- PDF TO DOCX ---
     elif operation_type == "PDF para DOCX":
@@ -252,62 +273,74 @@ try:
             uploaded_file = st.file_uploader(f"Carregue PDF (Máx: {MAX_SIZE_MB:.0f} MB)", type="pdf", key="pdf_upload_docx")
         if uploaded_file:
             if validate_file_size(uploaded_file, operation_type):
+                 # ... (checkbox OCR, botão) ...
                  with options_placeholder.container():
-                     apply_ocr_docx = st.checkbox("Aplicar OCR (PDFs imagem)", key="ocr_checkbox_docx", value=False, disabled=not pdf_processor.ocrmypdf_installed)
-                     if not pdf_processor.ocrmypdf_installed: st.warning("OCRmyPDF não detectado.")
+                     apply_ocr_docx = st.checkbox("Tentar OCR (PDFs baseados em imagem)", key="ocr_checkbox_docx", value=False, help="Útil se o PDF for apenas uma imagem escaneada, sem texto selecionável.", disabled=not pdf_processor.ocrmypdf_installed)
+                     if not pdf_processor.ocrmypdf_installed: st.warning("⚠️ OCRmyPDF não detectado. Opção de OCR desabilitada.")
                  processing_triggered = button_placeholder.button("Converter PDF para DOCX", key="pdf_to_docx_btn", use_container_width=True)
             if processing_triggered:
+                 # ... (lógica de conversão pdf->docx) ...
                  pdf_bytes = uploaded_file.getvalue()
-                 with result_placeholder, st.spinner(f"Convertendo PDF para DOCX{' com OCR' if apply_ocr_docx else ''}..."):
+                 with result_placeholder, st.spinner(f"Convertendo PDF para DOCX{' com tentativa de OCR' if apply_ocr_docx else ''}..."):
                       with tempfile.TemporaryDirectory() as temp_proc_dir:
                            input_pdf_path = os.path.join(temp_proc_dir, uploaded_file.name)
-                           output_docx_path = os.path.join(temp_proc_dir, f"{os.path.splitext(uploaded_file.name)[0]}.docx")
+                           base_name = os.path.splitext(uploaded_file.name)[0]
+                           output_docx_path = os.path.join(temp_proc_dir, f"{base_name}_{int(time.time())}.docx")
                            with open(input_pdf_path, "wb") as f: f.write(pdf_bytes)
                            success = pdf_processor.pdf_to_docx(input_pdf_path, output_docx_path, apply_ocr=apply_ocr_docx)
-                           if success and os.path.exists(output_docx_path):
+                           if success and os.path.exists(output_docx_path) and os.path.getsize(output_docx_path) > 100:
                                 st.success(f"✅ PDF convertido para DOCX!")
-                                output_filename = f"{os.path.splitext(uploaded_file.name)[0]}.docx"
+                                output_filename = f"{base_name}.docx"
                                 output_mimetype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                 with open(output_docx_path, "rb") as f: output_file_data = f.read()
+                           elif success:
+                                st.warning("⚠️ Conversão concluída, mas o arquivo DOCX parece vazio ou muito pequeno. O PDF original pode não conter texto extraível.")
                            else: st.error("❌ Falha ao converter para DOCX.")
+
 
     # --- PDF TO IMAGES (PNG) ---
     elif operation_type == "PDF para Imagens (PNG)":
         with upload_placeholder.container():
              uploaded_file = st.file_uploader(f"Carregue PDF (Máx: {MAX_SIZE_MB:.0f} MB)", type="pdf", key="pdf_upload_img")
         if uploaded_file:
-             if validate_file_size(uploaded_file, operation_type): processing_triggered = button_placeholder.button("Converter PDF para Imagens", key="pdf_to_img_btn", use_container_width=True)
+             if validate_file_size(uploaded_file, operation_type):
+                 processing_triggered = button_placeholder.button("Converter PDF para Imagens", key="pdf_to_img_btn", use_container_width=True)
              if processing_triggered:
+                 # ... (lógica pdf->img) ...
                   pdf_bytes = uploaded_file.getvalue()
                   with result_placeholder, st.spinner("Convertendo PDF para imagens PNG..."):
-                       temp_dir = tempfile.mkdtemp()
-                       input_pdf_path = os.path.join(temp_dir, "input.pdf");
-                       with open(input_pdf_path, "wb") as f: f.write(pdf_bytes)
-                       image_paths = pdf_processor.pdf_to_image(input_pdf_path, temp_dir, image_format='png')
-                       if image_paths:
-                            zip_path = os.path.join(temp_dir, "pdf_imagens.zip")
-                            zip_success = pdf_processor.create_zip_from_files(image_paths, zip_path)
-                            if zip_success and os.path.exists(zip_path):
-                                 st.success(f"✅ PDF convertido para {len(image_paths)} imagem(ns) PNG!")
-                                 output_filename = f"{os.path.splitext(uploaded_file.name)[0]}_imgs.zip"
-                                 output_mimetype = "application/zip";
-                                 with open(zip_path, "rb") as f: output_file_data = f.read()
-                            else: st.error("❌ Falha ao criar ZIP.")
-                       else: st.error("❌ Falha ao converter para imagens.")
+                       with tempfile.TemporaryDirectory() as temp_img_dir:
+                           input_pdf_path = os.path.join(temp_img_dir, "input.pdf");
+                           with open(input_pdf_path, "wb") as f: f.write(pdf_bytes)
+                           image_paths = pdf_processor.pdf_to_image(input_pdf_path, temp_img_dir, image_format='png')
+                           if image_paths:
+                                zip_path = os.path.join(temp_img_dir, "pdf_imagens.zip")
+                                zip_success = pdf_processor.create_zip_from_files(image_paths, zip_path)
+                                if zip_success and os.path.exists(zip_path):
+                                     st.success(f"✅ PDF convertido para {len(image_paths)} imagem(ns) PNG!")
+                                     output_filename = f"{os.path.splitext(uploaded_file.name)[0]}_imgs.zip"
+                                     output_mimetype = "application/zip";
+                                     with open(zip_path, "rb") as f: output_file_data = f.read()
+                                else: st.error("❌ Falha ao criar arquivo ZIP com as imagens.")
+                           else: st.error("❌ Falha ao converter PDF para imagens.")
+
 
     # --- DOCUMENT TO PDF ---
     elif operation_type == "Documento (DOCX, DOC, ODT, TXT) para PDF":
         with upload_placeholder.container():
-             uploaded_file = st.file_uploader(f"Carregue documento (Máx: {MAX_SIZE_MB:.0f} MB)", type=["docx", "doc", "odt", "txt"], key="doc_upload")
+             allowed_doc_types = ["docx", "doc", "odt", "txt"]
+             uploaded_file = st.file_uploader(f"Carregue documento ({', '.join(allowed_doc_types).upper()}) (Máx: {MAX_SIZE_MB:.0f} MB)", type=allowed_doc_types, key="doc_upload")
         if uploaded_file:
              if validate_file_size(uploaded_file, operation_type):
+                 # ... (verificação LO, botão) ...
                   with options_placeholder.container():
-                       if not pdf_processor.libreoffice_path: st.error("❌ LibreOffice não encontrado.")
-                       else: st.info(f"ℹ️ Usando LibreOffice ({pdf_processor.libreoffice_path}).")
+                       if not pdf_processor.libreoffice_path: st.error("❌ LibreOffice não encontrado. Conversão indisponível.")
+                       else: st.info(f"ℹ️ Usando LibreOffice ({pdf_processor.libreoffice_path}). A conversão pode levar alguns segundos.")
                   processing_triggered = button_placeholder.button(f"Converter {uploaded_file.name} para PDF", key="doc_to_pdf_btn", use_container_width=True, disabled=not pdf_processor.libreoffice_path)
-             if processing_triggered:
+             if processing_triggered and pdf_processor.libreoffice_path:
+                 # ... (lógica doc->pdf) ...
                   doc_bytes = uploaded_file.getvalue()
-                  with result_placeholder, st.spinner(f"Convertendo {uploaded_file.name} para PDF..."):
+                  with result_placeholder, st.spinner(f"Convertendo {uploaded_file.name} para PDF usando LibreOffice..."):
                        with tempfile.TemporaryDirectory() as temp_conv_dir:
                             input_doc_path = os.path.join(temp_conv_dir, uploaded_file.name)
                             output_pdf_path = os.path.join(temp_conv_dir, f"{os.path.splitext(uploaded_file.name)[0]}.pdf")
@@ -318,7 +351,52 @@ try:
                                  output_filename = f"{os.path.splitext(uploaded_file.name)[0]}.pdf"
                                  output_mimetype = "application/pdf";
                                  with open(output_pdf_path, "rb") as f: output_file_data = f.read()
-                            else: st.error("❌ Falha ao converter documento.")
+                            else: st.error("❌ Falha ao converter documento para PDF via LibreOffice.")
+
+
+    # --- PLANILHA PARA PDF ---
+    elif operation_type == "Planilha (XLSX, CSV, ODS) para PDF":
+        with upload_placeholder.container():
+             allowed_sheet_types = ["xlsx", "csv", "ods"]
+             uploaded_file = st.file_uploader(
+                 f"Carregue planilha ({', '.join(allowed_sheet_types).upper()}) (Máx: {MAX_SIZE_MB:.0f} MB)",
+                 type=allowed_sheet_types,
+                 key="sheet_upload"
+             )
+        if uploaded_file:
+             if validate_file_size(uploaded_file, operation_type):
+                 # ... (verificação LO, botão) ...
+                  with options_placeholder.container():
+                       if not pdf_processor.libreoffice_path:
+                            st.error("❌ LibreOffice não encontrado. Conversão de planilha indisponível.")
+                       else:
+                            st.info(f"ℹ️ Usando LibreOffice ({pdf_processor.libreoffice_path}). A conversão pode levar alguns segundos.")
+                            st.caption("Nota: A formatação pode variar. Múltiplas abas podem ser convertidas em múltiplas páginas PDF.")
+                  processing_triggered = button_placeholder.button(
+                      f"Converter {uploaded_file.name} para PDF",
+                      key="sheet_to_pdf_btn",
+                      use_container_width=True,
+                      disabled=not pdf_processor.libreoffice_path
+                  )
+             if processing_triggered and pdf_processor.libreoffice_path:
+                 # ... (lógica sheet->pdf) ...
+                  sheet_bytes = uploaded_file.getvalue()
+                  with result_placeholder, st.spinner(f"Convertendo planilha {uploaded_file.name} para PDF usando LibreOffice..."):
+                       with tempfile.TemporaryDirectory() as temp_conv_dir:
+                            input_sheet_path = os.path.join(temp_conv_dir, uploaded_file.name)
+                            output_pdf_path = os.path.join(temp_conv_dir, f"{os.path.splitext(uploaded_file.name)[0]}.pdf")
+                            with open(input_sheet_path, "wb") as f: f.write(sheet_bytes)
+                            success = pdf_processor.document_to_pdf(input_sheet_path, output_pdf_path)
+                            if success and os.path.exists(output_pdf_path) and os.path.getsize(output_pdf_path) > 0:
+                                 st.success(f"✅ Planilha convertida para PDF!")
+                                 output_filename = f"{os.path.splitext(uploaded_file.name)[0]}.pdf"
+                                 output_mimetype = "application/pdf";
+                                 with open(output_pdf_path, "rb") as f: output_file_data = f.read()
+                            else:
+                                 st.error("❌ Falha ao converter planilha para PDF via LibreOffice.")
+                                 if uploaded_file.name.lower().endswith('.csv'):
+                                     st.info("Dica para CSV: Verifique se o arquivo CSV está formatado corretamente (delimitadores, codificação).")
+
 
     # --- Download Button ---
     if output_file_data:
@@ -331,9 +409,12 @@ try:
 
 finally:
     # --- Limpeza Final ---
-    if temp_dir and os.path.exists(temp_dir):
-        try: shutil.rmtree(temp_dir); logging.info(f"Dir temp {temp_dir} removido.")
-        except Exception as e: logging.warning(f"Erro ao remover dir temp {temp_dir}: {e}")
+    if temp_dir_path and os.path.exists(temp_dir_path):
+        try:
+            shutil.rmtree(temp_dir_path)
+            logging.info(f"Diretório temporário manual {temp_dir_path} removido.")
+        except Exception as e:
+            logging.warning(f"Erro ao remover diretório temporário manual {temp_dir_path}: {e}")
 
 # --- Rodapé ---
 st.markdown("---")

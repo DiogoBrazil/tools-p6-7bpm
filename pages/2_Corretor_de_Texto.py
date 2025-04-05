@@ -16,7 +16,7 @@ st.write("""
     .css-1544g2n {
         display: none !important;
     }
-    
+
     /* Ajusta o layout */
     .css-1d391kg, .block-container {
         max-width: 1200px;
@@ -24,7 +24,7 @@ st.write("""
         padding-right: 1rem;
         margin: 0 auto;
     }
-    
+
     /* Estilo para o botão de voltar */
     div.element-container:nth-child(1) button {
         background-color: #f0f2f6 !important;
@@ -32,23 +32,23 @@ st.write("""
         border: none !important;
         font-weight: normal !important;
     }
-    
+
     div.element-container:nth-child(1) button:hover {
         background-color: #e0e2e6 !important;
         box-shadow: none !important;
     }
-    
+
     .header-container {
         display: flex;
         align-items: center;
         margin-bottom: 20px;
     }
-    
+
     .header-icon {
         font-size: 2.5em;
         margin-right: 15px;
     }
-    
+
     div.stDownloadButton > button {
         background-color: #2196F3;
         color: white;
@@ -58,12 +58,12 @@ st.write("""
         font-size: 16px;
         transition-duration: 0.4s;
     }
-    
+
     div.stDownloadButton > button:hover {
         background-color: #0b7dda;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
     }
-    
+
     .stButton > button {
         background-color: #2196F3;
         color: white;
@@ -73,12 +73,12 @@ st.write("""
         font-size: 16px;
         transition-duration: 0.4s;
     }
-    
+
     .stButton > button:hover {
         background-color: #0b7dda;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
     }
-    
+
     .text-area-label {
         font-weight: bold;
         margin-bottom: 5px;
@@ -101,7 +101,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("""
-Este corretor utiliza inteligência artificial para corrigir textos automaticamente, 
+Este corretor utiliza inteligência artificial para corrigir textos automaticamente,
 aplicando as normas padrões da língua portuguesa.
 """)
 
@@ -112,10 +112,10 @@ corrector = TextCorrector()
 if not corrector.is_configured():
     st.error("""
     ⚠️ **API não configurada!**
-    
-    Este serviço requer uma chave de API para funcionar. 
+
+    Este serviço requer uma chave de API para funcionar.
     Adicione a variável de ambiente `OPENAI_API_KEY` ou crie um arquivo `.env` com esta variável.
-    
+
     Contate o administrador do sistema para configurar a API.
     """)
 
@@ -133,28 +133,28 @@ if st.button('Corrigir Texto', use_container_width=True):
 
         if corrected_text:
             st.success("✅ Texto corrigido com sucesso!")
-            
+
             st.markdown('<p class="text-area-label">📝 Texto corrigido:</p>', unsafe_allow_html=True)
             st.text_area("", value=corrected_text, height=250, key="corrected")
-            
+
             # Comparação lado a lado (opcional)
             st.subheader("📊 Comparação")
             col1, col2 = st.columns(2)
-            
+
             with col1:
                 st.markdown("**Texto Original:**")
                 st.markdown(f"```{user_input[:500]}{'...' if len(user_input) > 500 else ''}```")
-            
+
             with col2:
                 st.markdown("**Texto Corrigido:**")
                 st.markdown(f"```{corrected_text[:500]}{'...' if len(corrected_text) > 500 else ''}```")
-            
+
             # Botão de download
             st.markdown("### 📥 Download")
             st.download_button(
-                label="📄 Baixar texto corrigido", 
-                data=corrected_text, 
-                file_name="texto_corrigido.txt", 
+                label="📄 Baixar texto corrigido",
+                data=corrected_text,
+                file_name="texto_corrigido.txt",
                 mime="text/plain"
             )
         else:

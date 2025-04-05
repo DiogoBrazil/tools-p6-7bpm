@@ -13,6 +13,5 @@ services:
     environment:
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_HEADLESS=true
-    # Garantir que o arquivo .env seja carregado corretamente
     env_file:
       - .env

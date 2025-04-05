@@ -1,19 +1,15 @@
-# tools-p-7bpm/pages/3_Video_Audio_Converter.py
-
 import streamlit as st
-from modules import media_converter # Importa o novo módulo
+from modules import media_converter # Importa o módulo atualizado
 import os
 import tempfile
-import re # Para validar URL do youtube
+# import re -> REMOVIDO (não precisa mais validar URL)
 import time
 
 # --- Constantes ---
-# Limite para vídeo/áudio pode ser diferente, ajuste conforme necessário
-MAX_MEDIA_SIZE_BYTES = 500 * 1024 * 1024 # 500 MB para vídeos?
+MAX_MEDIA_SIZE_BYTES = 500 * 1024 * 1024 # 500 MB para vídeos? Ajuste conforme necessário
 MAX_MEDIA_SIZE_MB = MAX_MEDIA_SIZE_BYTES / (1024 * 1024)
 
-# Regex simples para validar URL do YouTube (pode precisar de ajustes)
-YOUTUBE_REGEX = r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})"
+# --- YOUTUBE_REGEX REMOVIDO ---
 
 # --- Função de Validação ---
 def validate_media_file_size(uploaded_file):
@@ -25,18 +21,17 @@ def validate_media_file_size(uploaded_file):
         return False
     return True
 
-def validate_youtube_url(url):
-    return re.match(YOUTUBE_REGEX, url) is not None
+# --- validate_youtube_url REMOVIDO ---
 
 # --- Configuração da Página ---
 st.set_page_config(
-    page_title="Conversor Vídeo/Áudio - 7ºBPM/P-6",
+    page_title="Conversor Vídeo para MP3 - 7ºBPM/P-6", # Título atualizado
     page_icon="🎵",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# --- CSS Customizado (similar às outras páginas) ---
+# --- CSS Customizado (mantido como antes) ---
 st.write("""
 <style>
     /* ... (CSS básico: sidebar, container, botão voltar) ... */
@@ -81,18 +76,14 @@ st.markdown("""
 <div class="header-container">
     <div class="header-icon">🎵</div>
     <div>
-        <h1>Conversor para MP3</h1>
+        <h1>Conversor de Vídeo para MP3</h1> <!-- Título Atualizado -->
     </div>
 </div>
 """, unsafe_allow_html=True)
-st.markdown("Converta arquivos de vídeo ou links do YouTube para formato MP3.")
+st.markdown("Converta arquivos de vídeo (MP4, AVI, MOV, etc.) para formato de áudio MP3.") # Descrição Atualizada
 
-# --- Seleção de Input ---
-input_type = st.radio(
-    "Selecione a origem:",
-    ('Carregar Arquivo de Vídeo', 'Link do YouTube'),
-    key="input_type_media", horizontal=True
-)
+# --- Seleção de Input REMOVIDA ---
+# input_type = st.radio(...)
 
 # --- Placeholders ---
 input_placeholder = st.empty()
@@ -101,7 +92,7 @@ result_placeholder = st.empty()
 
 # --- Variáveis de Controle ---
 uploaded_file = None
-youtube_url = None
+# youtube_url = None -> REMOVIDO
 output_mp3_data = None
 output_filename = "audio.mp3"
 processing_triggered = False
@@ -111,53 +102,37 @@ ffmpeg_ok = media_converter._find_ffmpeg() is not None
 if not ffmpeg_ok:
     st.error("⚠️ FFmpeg não encontrado no servidor. As conversões não funcionarão.")
 
-if input_type == 'Carregar Arquivo de Vídeo':
-    with input_placeholder.container():
-        uploaded_file = st.file_uploader(
-            f"Carregue um arquivo de vídeo (MP4, AVI, MOV, etc. - Máx: {MAX_MEDIA_SIZE_MB:.0f} MB)",
-            type=["mp4", "avi", "mov", "mkv", "webm", "flv"], # Adicione mais tipos se necessário
-            key="video_upload"
-        )
-    if uploaded_file and ffmpeg_ok:
-        if validate_media_file_size(uploaded_file):
-            processing_triggered = button_placeholder.button("Converter Vídeo para MP3", key="convert_video_btn", use_container_width=True)
+# --- Input sempre será o uploader ---
+with input_placeholder.container():
+    uploaded_file = st.file_uploader(
+        f"Carregue um arquivo de vídeo (MP4, AVI, MOV, etc. - Máx: {MAX_MEDIA_SIZE_MB:.0f} MB)",
+        type=["mp4", "avi", "mov", "mkv", "webm", "flv"], # Adicione mais tipos se necessário
+        key="video_upload"
+    )
+if uploaded_file and ffmpeg_ok:
+    if validate_media_file_size(uploaded_file):
+        processing_triggered = button_placeholder.button("Converter Vídeo para MP3", key="convert_video_btn", use_container_width=True)
 
-elif input_type == 'Link do YouTube':
-    with input_placeholder.container():
-        youtube_url = st.text_input("Cole o link do vídeo do YouTube:", key="youtube_url_input")
-    if youtube_url and ffmpeg_ok:
-        if validate_youtube_url(youtube_url):
-            processing_triggered = button_placeholder.button("Baixar e Converter Áudio do YouTube", key="convert_youtube_btn", use_container_width=True)
-        elif youtube_url: # Se algo foi digitado mas não é válido
-             input_placeholder.warning("URL do YouTube inválida. Use o formato padrão (ex: https://www.youtube.com/watch?v=...).")
+# --- Lógica de YouTube REMOVIDA ---
+# elif input_type == 'Link do YouTube':
+#     ...
 
 # --- Processamento ---
-if processing_triggered and ffmpeg_ok:
+if processing_triggered and ffmpeg_ok and uploaded_file: # Garante que uploaded_file existe
     with tempfile.TemporaryDirectory() as temp_dir:
         output_mp3_path = os.path.join(temp_dir, f"output_{int(time.time())}.mp3")
         success = False
         message = "Falha desconhecida."
 
-        if uploaded_file:
-            input_video_path = os.path.join(temp_dir, uploaded_file.name)
-            with open(input_video_path, "wb") as f:
-                f.write(uploaded_file.getvalue())
-            with result_placeholder, st.spinner("Convertendo vídeo para MP3..."):
-                success, message = media_converter.convert_video_to_mp3(input_video_path, output_mp3_path)
-                output_filename = f"{os.path.splitext(uploaded_file.name)[0]}.mp3"
+        # --- Sempre processará o arquivo carregado ---
+        input_video_path = os.path.join(temp_dir, uploaded_file.name)
+        with open(input_video_path, "wb") as f:
+            f.write(uploaded_file.getvalue())
+        with result_placeholder, st.spinner("Convertendo vídeo para MP3..."):
+            success, message = media_converter.convert_video_to_mp3(input_video_path, output_mp3_path)
+            output_filename = f"{os.path.splitext(uploaded_file.name)[0]}.mp3"
 
-        elif youtube_url:
-            with result_placeholder, st.spinner("Baixando e convertendo áudio do YouTube..."):
-                 success, message = media_converter.download_youtube_audio(youtube_url, output_mp3_path)
-                 # Tenta gerar um nome mais descritivo (pode falhar se o título não for obtido)
-                 try:
-                     video_id = re.search(YOUTUBE_REGEX, youtube_url).group(1)
-                     output_filename = f"youtube_{video_id}.mp3"
-                 except:
-                     output_filename = f"youtube_audio_{int(time.time())}.mp3"
-
-
-        # --- Resultado e Download ---
+        # --- Lógica de resultado/download permanece a mesma ---
         if success and os.path.exists(output_mp3_path):
             result_placeholder.success(f"✅ {message}")
             with open(output_mp3_path, "rb") as f:
