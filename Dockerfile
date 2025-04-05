@@ -7,8 +7,8 @@ WORKDIR /app
 # Variáveis de ambiente para instalação não interativa
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependências do sistema (Ghostscript, Tesseract, OCRmyPDF e LibreOffice)
-# Usar o meta-pacote 'libreoffice' para garantir a instalação completa
+# Instalar dependências do sistema
+# Garante ffmpeg (necessário para yt-dlp, whisper e conversões)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ghostscript \
     tesseract-ocr \
@@ -16,23 +16,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr-eng \
     ocrmypdf \
     libreoffice \
-    # Remover libreoffice-writer e libreoffice-headless se o meta-pacote for usado
+    ffmpeg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Criar diretórios para as páginas e módulos
+# Criar diretórios
 RUN mkdir -p /app/pages /app/modules
 
-# Copiar arquivos do projeto
+# Copiar requirements e instalar dependências Python
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Adicionado --upgrade pip antes de instalar
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Copiar o restante dos arquivos
 COPY *.py .
 COPY pages/*.py ./pages/
 COPY modules/*.py ./modules/
 COPY .env* ./
 
-# Porta que o Streamlit vai usar
+# Porta
 EXPOSE 8501
 
 # Define ambiente de execução
@@ -43,5 +46,5 @@ ENV PYTHONUNBUFFERED=1 \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8
 
-# Comando para iniciar a aplicação
+# Comando
 CMD ["streamlit", "run", "Home.py", "--server.address=0.0.0.0"]

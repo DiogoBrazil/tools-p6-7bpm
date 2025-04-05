@@ -9,99 +9,128 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilos CSS personalizados (ajustados para 2 colunas principais ou mantendo 3 com a primeira mais destacada)
+# Estilos CSS (Com ajustes para diminuir os cards)
 st.markdown("""
 <style>
-    /* ... (Estilos anteriores - Esconder sidebar, layout principal, etc) ... */
-    .css-1544g2n { display: none !important; }
-    .css-1d391kg, .block-container { max-width: 100%; padding: 1rem 2rem; }
-    .main-header { font-size: 2.5rem; margin-bottom: 1rem; text-align: center; color: #333; }
-    .main-description { font-size: 1.1rem; margin-bottom: 2.5rem; text-align: center; color: #555; }
+    /* === GERAL === */
+    .css-1544g2n { display: none !important; } /* Esconde sidebar */
+    .css-1d391kg, .block-container { max-width: 100%; padding: 1rem 1.5rem; } /* Padding lateral ajustado */
+    .main-header { font-size: 2.3rem; margin-bottom: 0.8rem; text-align: center; color: #333; }
+    .main-description { font-size: 1.0rem; margin-bottom: 2rem; text-align: center; color: #555; }
+    .footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e6; text-align: center; font-size: 0.85rem; color: #777; }
 
-    .tool-card { /* Estilo geral do card mantido */
-        background-color: #ffffff; border-radius: 12px; padding: 1.8rem; margin-bottom: 1.5rem;
-        transition: transform 0.3s ease, box-shadow 0.3s ease; text-align: center;
-        border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        min-height: 400px; /* Aumentar altura mínima se necessário */
-        display: flex; flex-direction: column; justify-content: space-between;
+    /* === CARD === */
+    .tool-card {
+        background-color: #ffffff;
+        border-radius: 10px; /* Borda ligeiramente menos redonda */
+        padding: 1.5rem; /* <<< REDUZIDO: Padding interno */
+        margin-bottom: 1.2rem; /* Espaço entre linhas de cards */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-align: center;
+        border: 1px solid #e9e9e9; /* Borda mais sutil */
+        box-shadow: 0 3px 10px rgba(0,0,0,0.04); /* Sombra mais sutil */
+        min-height: 340px; /* <<< REDUZIDO: Altura mínima significativamente menor */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
-    .tool-card:hover { transform: translateY(-6px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
-    .tool-icon { font-size: 3.5rem; margin-bottom: 0.8rem; display: block; }
-    .tool-title { font-size: 1.6rem; margin-bottom: 0.8rem; color: #2c3e50; }
-    .tool-card p { margin-bottom: 1rem; color: #666; line-height: 1.6; }
-    .tool-card ul { padding-left: 1.5rem; margin: 0.5rem 0 1rem 0; text-align: left; color: #555; }
-    .tool-card li { margin-bottom: 0.4rem; }
-
-    /* Botões Grandes */
-    .stButton > button { /* Estilo geral do botão mantido */
-        width: 100%; height: 65px; font-size: 1.2rem; font-weight: bold;
-        transition: all 0.3s ease; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        margin-top: auto; display: flex; align-items: center; justify-content: center;
-        border: none; cursor: pointer;
+    .tool-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.08);
     }
-    .stButton > button:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
 
-    /* Cores específicas (PDF agora é azul, Texto laranja?) - Ajuste como preferir */
-    .btn-pdf-tools > button { background: linear-gradient(135deg, #2196F3, #42A5F5); color: white; } /* Azul */
+    /* === CONTEÚDO DO CARD === */
+    .tool-icon {
+        font-size: 3.0rem; /* <<< REDUZIDO */
+        margin-bottom: 0.6rem;
+        display: block;
+    }
+    .tool-title {
+        font-size: 1.4rem; /* <<< REDUZIDO */
+        margin-bottom: 0.6rem;
+        color: #2c3e50;
+    }
+    .tool-card p { /* Descrição */
+        margin-bottom: 0.8rem; /* <<< REDUZIDO */
+        color: #666;
+        line-height: 1.5; /* Espaçamento entre linhas ligeiramente menor */
+        font-size: 0.95rem; /* <<< REDUZIDO */
+    }
+    .tool-card ul { /* Lista */
+        padding-left: 1.2rem; /* <<< REDUZIDO */
+        margin: 0.3rem 0 0.8rem 0; /* Margens ajustadas */
+        text-align: left;
+        color: #555;
+        font-size: 0.9rem; /* <<< REDUZIDO */
+    }
+    .tool-card li {
+        margin-bottom: 0.3rem; /* <<< REDUZIDO */
+    }
+
+    /* === BOTÃO GRANDE NO CARD === */
+    .stButton > button {
+        width: 100%;
+        height: 55px; /* <<< REDUZIDO */
+        font-size: 1.05rem; /* <<< REDUZIDO */
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+        margin-top: auto; /* Mantém no fundo */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    }
+
+    /* Cores específicas (mantidas) */
+    .btn-pdf-tools > button { background: linear-gradient(135deg, #2196F3, #42A5F5); color: white; }
     .btn-pdf-tools > button:hover { background: linear-gradient(135deg, #1976D2, #2196F3); }
-
-    .btn-text > button { background: linear-gradient(135deg, #FF9800, #FFB74D); color: white; } /* Laranja */
+    .btn-text > button { background: linear-gradient(135deg, #FF9800, #FFB74D); color: white; }
     .btn-text > button:hover { background: linear-gradient(135deg, #F57C00, #FF9800); }
-
-    /* Remover estilo btn-transform se não houver 3ª coluna */
-
-    .footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e6; text-align: center; font-size: 0.9rem; color: #777; }
+    .btn-media > button { background: linear-gradient(135deg, #9C27B0, #BA68C8); color: white; }
+    .btn-media > button:hover { background: linear-gradient(135deg, #7B1FA2, #9C27B0); }
+    .btn-transcribe > button { background: linear-gradient(135deg, #009688, #4DB6AC); color: white; }
+    .btn-transcribe > button:hover { background: linear-gradient(135deg, #00796B, #009688); }
 </style>
 """, unsafe_allow_html=True)
 
 # Cabeçalho
 st.markdown('<h1 class="main-header">🛠️ Ferramentas da Seção de Justiça e Disciplina (P/6)</h1>', unsafe_allow_html=True)
-st.markdown('<p class="main-description">Bem-vindo ao portal de ferramentas digitais para otimizar processos administrativos.</p>', unsafe_allow_html=True)
+# --- Layout 2x2 ---
+# Usar "gap=medium" pode ajudar a reduzir o espaço entre colunas também
+row1_col1, row1_col2 = st.columns(2, gap="medium")
+row2_col1, row2_col2 = st.columns(2, gap="medium")
 
-# --- Ferramentas em 2 Colunas ---
-col1, col2 = st.columns(2, gap="large") # Ajustado para 2 colunas
-
-with col1:
-    # Card Atualizado para Ferramentas PDF
+with row1_col1:
+    # Card Ferramentas PDF
     st.markdown("""
-    <div class="tool-card">
+    <div class="tool-card" id="card-pdf">
         <div>
-            <span class="tool-icon">📄</span> <!-- Ícone atualizado -->
-            <h2 class="tool-title">Ferramentas PDF</h2> <!-- Título atualizado -->
-            <p>Comprima, adicione OCR (pesquisa) e converta arquivos PDF e documentos.</p> <!-- Descrição atualizada -->
-            <ul style="text-align: left;">
+            <span class="tool-icon">📄</span>
+            <h2 class="tool-title">Ferramentas PDF</h2>
+            <p>Comprima, adicione OCR e converta arquivos PDF e documentos.</p>
+            <ul>
                 <li>Comprimir PDF e torná-los pesquisáveis (OCR)</li>
                 <li>Converter documentos e imagens para PDF</li>
                 <li>Converter PDF para DOCX / Imagens</li>
             </ul>
         </div>
-        <div class="btn-pdf-tools"></div> <!-- Classe CSS atualizada -->
+        <div class="btn-pdf-tools"></div>
     </div>
     """, unsafe_allow_html=True)
-
-    # Botão aponta para a nova página consolidada
     if st.button("📄 ABRIR FERRAMENTAS PDF", key="pdf_tools_button", use_container_width=True):
-         st.switch_page("pages/1_Ferramentas_PDF.py") # Caminho atualizado
+         st.switch_page("pages/1_Ferramentas_PDF.py")
 
-    # Script JS para mover o botão (ajustar seletor se necessário)
+with row1_col2:
+    # Card Corretor de Texto
     st.markdown("""
-        <script>
-            // A lógica assume que este é o primeiro card/botão na ordem do código
-            const pdfToolsCard = document.querySelector('.tool-card:has(.btn-pdf-tools)');
-            if (pdfToolsCard) {
-                 const pdfToolsButton = pdfToolsCard.nextElementSibling.querySelector('button');
-                 if (pdfToolsButton) {
-                     pdfToolsCard.querySelector('.btn-pdf-tools').appendChild(pdfToolsButton.parentNode);
-                 }
-            }
-        </script>
-        """, unsafe_allow_html=True)
-
-
-with col2:
-    # Card do Corretor de Texto (inalterado)
-    st.markdown("""
-    <div class="tool-card">
+    <div class="tool-card" id="card-text">
         <div>
             <span class="tool-icon">📝</span>
             <h2 class="tool-title">Corretor de Texto</h2>
@@ -115,30 +144,81 @@ with col2:
         <div class="btn-text"></div>
     </div>
     """, unsafe_allow_html=True)
-
     if st.button("📝 ABRIR CORRETOR", key="text_button", use_container_width=True):
         st.switch_page("pages/2_Corretor_de_Texto.py")
 
-    # Script JS para mover o botão (ajustar seletor se necessário)
+with row2_col1:
+    # Card Conversor Vídeo/Áudio
     st.markdown("""
-        <script>
-            // A lógica assume que este é o segundo card/botão
-            const textCard = document.querySelectorAll('.tool-card')[1]; // Pega o segundo card
-            if(textCard && textCard.querySelector('.btn-text')) { // Verifica se o card e o div existem
-                 const textButtonElement = textCard.nextElementSibling; // Pega o elemento do botão Streamlit
-                 if (textButtonElement) {
-                      const textButton = textButtonElement.querySelector('button');
-                      if(textButton){
-                           textCard.querySelector('.btn-text').appendChild(textButton.parentNode);
-                      }
-                 }
-            }
-        </script>
-        """, unsafe_allow_html=True)
+    <div class="tool-card" id="card-media">
+        <div>
+            <span class="tool-icon">🎵</span>
+            <h2 class="tool-title">Conversor para MP3</h2>
+            <p>Converta vídeos (upload ou link YouTube) para áudio MP3.</p>
+            <ul>
+                <li>Suporta MP4, AVI, MOV, etc.</li>
+                <li>Extrai áudio de links do YouTube</li>
+                <li>Saída em formato MP3</li>
+            </ul>
+        </div>
+        <div class="btn-media"></div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("🎵 ABRIR CONVERSOR MP3", key="media_button", use_container_width=True):
+        st.switch_page("pages/3_Video_Audio_Converter.py")
+
+with row2_col2:
+    # Card Transcritor de Áudio
+    st.markdown("""
+    <div class="tool-card" id="card-transcribe">
+        <div>
+            <span class="tool-icon">🎤</span>
+            <h2 class="tool-title">Transcritor de Áudio</h2>
+            <p>Converta arquivos de áudio (MP3, WAV, etc.) em texto.</p>
+            <ul>
+                <li>Suporta diversos formatos de áudio</li>
+                <li>Ideal para reuniões, entrevistas</li>
+            </ul>
+        </div>
+        <div class="btn-transcribe"></div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("🎤 ABRIR TRANSCRITOR", key="transcribe_button", use_container_width=True):
+        st.switch_page("pages/4_Audio_Transcripter.py")
+
+
+# --- Scripts JS para mover os botões (mantido) ---
+st.markdown("""
+    <script>
+        function moveButton(cardId, buttonKey, targetDivClass) {
+            const card = document.getElementById(cardId);
+            const buttonElement = document.querySelector(`button[data-testid='stButton'][kind='primary'][key='${buttonKey}']`);
+            if (card && buttonElement) {
+                const targetDiv = card.querySelector(`.${targetDivClass}`);
+                if (targetDiv) {
+                    const buttonContainer = buttonElement.closest('div.stButton');
+                    if (buttonContainer) { // Verifica se o container do botão foi encontrado
+                        targetDiv.appendChild(buttonContainer);
+                    } else { console.warn(`Button container not found for key ${buttonKey}`); }
+                 } else { console.warn(`Target div .${targetDivClass} not found in card ${cardId}`); }
+            } else {
+                // Adiciona log se o card ou o botão não for encontrado
+                // console.warn(`Card ${cardId} or Button ${buttonKey} not found`);
+             }
+        }
+        // Chama a função para cada botão após um delay
+        setTimeout(() => {
+            moveButton('card-pdf', 'pdf_tools_button', 'btn-pdf-tools');
+            moveButton('card-text', 'text_button', 'btn-text');
+            moveButton('card-media', 'media_button', 'btn-media');
+            moveButton('card-transcribe', 'transcribe_button', 'btn-transcribe');
+        }, 250); // Aumentei um pouco o delay para garantir que tudo renderize
+    </script>
+""", unsafe_allow_html=True)
+
 
 # Rodapé
 st.markdown("---")
-# ... (Rodapé existente inalterado) ...
 st.markdown("""
 <div class="footer">
     <p>© 2024 - Seção de Justiça e Disciplina - 7º Batalhão de Polícia Militar</p>
