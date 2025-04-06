@@ -1,0 +1,10 @@
+.git/
+.gitignore
+*.pyc
+__pycache__/
+*.log
+# Adicione outras pastas/arquivos específicos do seu ambiente
+# .venv/
+# .vscode/
+postgres-data/
+postgres-data
