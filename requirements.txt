@@ -82,3 +82,4 @@ sentence-transformers>=2.2.0
 faiss-cpu>=1.7.0
 pypdf>=3.0.0
 accelerate>=0.20.0
+python-dateutil>=2.8.0
