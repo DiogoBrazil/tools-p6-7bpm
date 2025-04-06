@@ -114,7 +114,7 @@ with row3_col1: # Colocado na primeira coluna da terceira linha
         <div>
             <span class="tool-icon">⚖️</span>
             <h2 class="tool-title">Consulta RDPM</h2>
-            <p>Tire dúvidas sobre o Regulamento Disciplinar.</p>
+            <p>Tire dúvidas sobre o RDPM.</p>
             <ul>
                 <li>Busca no texto oficial</li>
                 <li>Respostas baseadas no RDPM</li>
