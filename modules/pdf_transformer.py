@@ -1,17 +1,17 @@
 import os
 import tempfile
-import fitz  # PyMuPDF
+import fitz 
 from docx import Document
 from docx.shared import Inches
 import img2pdf
 from PIL import Image
 import zipfile
-import io # Para trabalhar com bytes em memória
+import io
 import subprocess
 import platform
 import shutil
 import logging
-from PyPDF2 import PdfReader, PdfWriter # Import mantido para merge_pdfs
+from PyPDF2 import PdfReader, PdfWriter
 
 logging.basicConfig(level=logging.INFO)
 
@@ -140,7 +140,7 @@ class PDFTransformer:
                 ocr_output_path = os.path.join(temp_dir, "ocr_output.pdf")
                 step_successful = self._apply_ocrmypdf(current_step_output, ocr_output_path, ocr_language)
                 if step_successful: current_step_output = ocr_output_path; logging.info("OCR bem-sucedido.")
-                else: logging.warning("Falha na etapa de OCR."); step_successful = True # Sucesso parcial
+                else: logging.warning("Falha na etapa de OCR."); step_successful = True
             if step_successful and os.path.exists(current_step_output):
                  with open(current_step_output, 'rb') as f: processed_bytes = f.read()
                  final_size_mb = len(processed_bytes) / 1024 / 1024; success = True
@@ -215,7 +215,7 @@ class PDFTransformer:
             logging.info(f"{len(generated_images)} images generated in: {output_folder}"); return generated_images
         except Exception as e: logging.error(f"Error pdf_to_image: {str(e)}"); return None
         finally:
-             if doc: doc.close() # Ensure the document is closed
+             if doc: doc.close()
 
     def create_zip_from_files(self, file_paths, output_zip_path):
         try:
@@ -259,7 +259,7 @@ class PDFTransformer:
                     if not reader.pages: logging.warning(f"PDF {idx+1} empty/corrupt, skipping."); continue
                     for page in reader.pages: merged_writer.add_page(page)
                     logging.debug(f"Added PDF {idx+1} ({len(reader.pages)} pages).")
-                except Exception as read_err: logging.error(f"Error reading PDF {idx+1}: {read_err}. Skipping."); # Continue
+                except Exception as read_err: logging.error(f"Error reading PDF {idx+1}: {read_err}. Skipping.");
             if not merged_writer.pages: return False, None, "No valid content found to merge."
             output_stream = io.BytesIO(); merged_writer.write(output_stream); merged_writer.close()
             output_stream.seek(0); result_bytes = output_stream.getvalue()

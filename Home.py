@@ -1,5 +1,3 @@
-# tools-p-7bpm/Home.py
-
 import streamlit as st
 import time
 import logging
@@ -13,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Estilos CSS (Borda do Card e Botão Azul Unificado) ---
+# --- Estilos CSS ---
 st.markdown("""
 <style>
     /* === GERAL === */
@@ -107,7 +105,6 @@ with row1_col1:
         <div> <span class="tool-icon">📄</span> <h2 class="tool-title">Ferramentas PDF</h2> <p>Comprima, OCR, junte, converta PDFs.</p> <ul> <li>Juntar, comprimir, OCR</li> <li>Doc/Planilha/Imagem → PDF</li> <li>PDF → Docx/Imagem</li> </ul> </div>
         <div class="btn-pdf-tools"></div> <!-- Placeholder (mantido para JS mover o botão) -->
     </div>""", unsafe_allow_html=True)
-    # Botão (será movido e estilizado pelo CSS geral)
     if st.button("ABRIR FERRAMENTAS PDF", key="pdf_tools_button", use_container_width=True, type="primary"):
          st.switch_page("pages/1_Ferramentas_PDF.py")
 
@@ -189,10 +186,6 @@ with row3_col2:
             st.error("Página da Calculadora de Prescrição não encontrada.")
 
 
-# --- Scripts JS para mover os botões (Sem alterações necessárias aqui) ---
-# O JS continua movendo os botões para os placeholders com classes específicas.
-# Essas classes (.btn-pdf-tools, etc.) não são mais usadas para a COR no CSS,
-# mas ainda são necessárias como destinos para o JS mover os botões.
 st.markdown("""
     <script>
         function moveButton(cardId, buttonKey, targetDivClass) {

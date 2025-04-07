@@ -2,20 +2,18 @@ import os
 import tempfile
 import subprocess
 import logging
-import whisper # openai-whisper
+import whisper
 import shutil
 import json
-import streamlit as st # <<< Adicionado para o cache
+import streamlit as st
 
 logging.basicConfig(level=logging.INFO)
 
 WHISPER_MODEL_NAME = "small"
-# whisper_model = None -> REMOVIDO (será gerenciado pelo cache)
 
 ffmpeg_path = None
 ffprobe_path = None
 
-# --- Funções _find_ffmpeg e _find_ffprobe mantidas como antes ---
 def _find_ffmpeg():
     """Encontra o caminho do ffmpeg."""
     global ffmpeg_path
@@ -38,32 +36,25 @@ def _find_ffprobe():
         logging.warning("ffprobe não encontrado no PATH. Verificação de stream de áudio não será possível.")
     return ffprobe_path
 
-# <<< REMOVIDA a função _load_whisper_model original >>>
 
-# <<< NOVA Função cacheada para carregar o modelo Whisper >>>
-@st.cache_resource(show_spinner=False) # Desliga spinner padrão do cache, usaremos um customizado na página
+@st.cache_resource(show_spinner=False)
 def load_whisper_model():
-    """Carrega o modelo Whisper especificado (cacheado por Streamlit)."""
+    """Carrega o modelo Whisper especificado"""
     model = None
     try:
         logging.info(f"CACHE MISS ou primeira execução: Carregando modelo Whisper '{WHISPER_MODEL_NAME}'...")
         # Garante que ffmpeg está disponível, pois whisper pode precisar
         if not _find_ffmpeg():
              logging.error("FFmpeg não encontrado, necessário para Whisper.")
-             # Retornar None aqui pode ser problemático se o cache já estiver rodando.
-             # Melhor depender da falha do whisper.load_model se ffmpeg não estiver lá.
              pass
         model = whisper.load_model(WHISPER_MODEL_NAME)
         logging.info(f"Modelo Whisper '{WHISPER_MODEL_NAME}' carregado com sucesso e cacheado.")
         return model
     except Exception as e:
         logging.error(f"Erro CRÍTICO ao carregar modelo Whisper '{WHISPER_MODEL_NAME}': {e}", exc_info=True)
-        # Retorna None para indicar falha no carregamento
         return None
 
-# --- Função _has_audio_stream mantida como antes ---
 def _has_audio_stream(input_path):
-    # ... (código inalterado) ...
     """Verifica se o arquivo de mídia contém pelo menos um stream de áudio usando ffprobe."""
     ffprobe = _find_ffprobe()
     if not ffprobe:
@@ -98,7 +89,6 @@ def _has_audio_stream(input_path):
         logging.error(f"Erro inesperado ao verificar streams de áudio: {str(e)}")
         return True, f"Erro inesperado na verificação de áudio: {str(e)}"
 
-# --- Função convert_video_to_mp3 mantida como antes ---
 def convert_video_to_mp3(input_video_path, output_mp3_path):
     # ... (código inalterado) ...
     """Converte um arquivo de vídeo para MP3 usando ffmpeg, verificando antes se há áudio."""
@@ -152,14 +142,11 @@ def convert_video_to_mp3(input_video_path, output_mp3_path):
         return False, "Ocorreu um erro inesperado durante o processamento."
 
 
-# <<< ALTERADO: Função agora recebe o objeto 'model' como argumento >>>
 def transcribe_audio_file(input_audio_path, model):
     """Transcreve um arquivo de áudio usando um modelo Whisper pré-carregado."""
-    # model = _load_whisper_model() -> Removida chamada interna
     if not model:
-        # Esta verificação agora deve ser feita ANTES de chamar esta função
         return False, "Modelo Whisper não fornecido ou inválido.", ""
-    _find_ffprobe() # Garante que ffprobe foi verificado
+    _find_ffprobe()
 
     logging.info(f"Iniciando transcrição com Whisper '{WHISPER_MODEL_NAME}': {input_audio_path}")
     try:
@@ -169,7 +156,5 @@ def transcribe_audio_file(input_audio_path, model):
         return True, "Transcrição concluída com sucesso.", transcribed_text
     except Exception as e:
         error_msg = f"Erro durante a transcrição com Whisper: {e}"
-        # if not ffmpeg_path: # ffmpeg_path pode não estar globalmente atualizado aqui
-        #     error_msg += " (Verifique se FFmpeg está instalado e no PATH do sistema)"
         logging.exception(error_msg)
         return False, "Ocorreu um erro durante a transcrição.", ""

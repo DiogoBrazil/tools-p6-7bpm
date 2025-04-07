@@ -8,8 +8,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # Mantém a sidebar fechada
 )
 
-# Configuração para que o primeiro botão tenha estilo secundário
-# Necessário para o botão Voltar ter aparência consistente
+# CSS
 st.write("""
 <style>
     /* Esconde a sidebar completamente */
@@ -86,11 +85,9 @@ st.write("""
 </style>
 """, unsafe_allow_html=True)
 
-# Botão para voltar à página inicial
 if st.button("← Voltar à página inicial", key="back_button"):
     st.switch_page("Home.py")
 
-# Cabeçalho personalizado
 st.markdown("""
 <div class="header-container">
     <div class="header-icon">📝</div>

@@ -1,17 +1,14 @@
 import streamlit as st
-# <<< Importa a nova função de carregamento cacheada >>>
 from modules.media_converter import load_whisper_model, transcribe_audio_file, WHISPER_MODEL_NAME
 from modules.text_corrector import TextCorrector
 import os
 import tempfile
 import time
-import logging # Para logar o estado do modelo
+import logging 
 
-# --- Constantes ---
 MAX_AUDIO_SIZE_BYTES = 200 * 1024 * 1024
 MAX_AUDIO_SIZE_MB = MAX_AUDIO_SIZE_BYTES / (1024 * 1024)
 
-# --- Função de Validação ---
 def validate_audio_file_size(uploaded_file):
     if not uploaded_file: return False
     file_size = uploaded_file.size
@@ -71,12 +68,12 @@ api_corrector_ok = corrector.is_configured()
 whisper_model = None # Variável para guardar o modelo carregado
 
 # --- <<< Carregamento do Modelo Whisper com Spinner >>> ---
-model_load_status_placeholder = st.empty() # Placeholder para mensagem de status/erro do carregamento
+model_load_status_placeholder = st.empty()
 try:
     with model_load_status_placeholder, st.spinner(f"Carregando modelo de transcrição ({WHISPER_MODEL_NAME})... Aguarde. Isso pode levar alguns minutos na primeira vez."):
         whisper_model = load_whisper_model() # Chama a função cacheada
 except Exception as load_err:
-     # Captura exceções que possam ocorrer fora da função cacheada (menos provável)
+     # Captura exceções que possam ocorrer fora da função cacheada
      logging.error(f"Erro inesperado durante tentativa de carregar modelo: {load_err}", exc_info=True)
      whisper_model = None # Garante que está None
 
@@ -89,7 +86,7 @@ else:
     # Limpa a mensagem do spinner se carregou com sucesso
     model_load_status_placeholder.empty()
     logging.info("Modelo Whisper pronto para uso.")
-    # Aviso sobre API do Corretor (se aplicável)
+    # Aviso sobre API do Corretor
     if not api_corrector_ok:
         st.warning("⚠️ API de correção não configurada (verifique OPENAI_API_KEY no .env). O refinamento pós-transcrição será pulado.")
 
@@ -142,7 +139,7 @@ else:
                 raw_transcribed_text = raw_text
                 st.success(f"✅ {transcribe_message}")
 
-                # Etapa 2: Correção com API (se configurada)
+                # Etapa 2: Correção com API
                 if api_corrector_ok:
                     with result_placeholder, st.spinner("Etapa 2/2: Refinando transcrição com IA..."):
                          corrected_text = corrector.correct_transcription(raw_transcribed_text)
@@ -155,7 +152,7 @@ else:
                 else:
                      st.info("Refinamento com IA pulado (API não configurada).")
 
-            else: # Falha na transcrição Whisper
+            else:
                 result_placeholder.error(f"❌ Falha na transcrição: {transcribe_message}")
 
         finally:
@@ -174,7 +171,7 @@ else:
             st.subheader("Resultados:")
             # Caixa 1: Transcrição Original (Whisper)
             with st.container(border=True):
-                 st.markdown("**Transcrição Original**") # Usa a constante importada
+                 st.markdown("**Transcrição Original**")
                  st.text_area("", value=raw_transcribed_text, height=300, key="transcription_raw_output", disabled=True)
                  st.download_button(
                      label="📄 Baixar Transcrição Original (.txt)",
@@ -184,7 +181,7 @@ else:
                      key="download_raw_text_button",
                      use_container_width=True
                  )
-            st.markdown("---") # Separador
+            st.markdown("---")
             # Caixa 2: Transcrição Refinada (IA)
             if corrected_transcribed_text is not None:
                 with st.container(border=True):

@@ -7,24 +7,17 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-# <<< Removido RunnablePassthrough, StrOutputParser, create_retrieval_chain, create_stuff_documents_chain daqui >>>
-#     Eles serão usados dentro da função de criação da chain
-
-# <<< Importa TextCorrector aqui para pegar o LLM client dentro da função cacheada >>>
 from modules.text_corrector import TextCorrector
 
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# --- Constantes ---
 PDF_PATH = "files/rdpm.pdf"
 EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 CACHE_DIR = "/app/.cache/huggingface"
 
-# --- Funções Auxiliares ---
 
-# 1. Cache para carregar e indexar o PDF -> Retorna o RETRIEVER
 @st.cache_resource(show_spinner=False)
 def load_and_get_retriever():
     """Carrega PDF, splita, cria embeddings e retorna o Retriever FAISS."""
@@ -56,7 +49,6 @@ def load_and_get_retriever():
         log.error(f"Erro em load_and_get_retriever: {e}", exc_info=True)
         return None
 
-# 2. Cache para obter o cliente LLM (pode ser útil se TextCorrector fizer algo pesado na inicialização)
 @st.cache_resource(show_spinner=False)
 def get_llm_client_cached():
     """Obtém o cliente LLM configurado."""
@@ -70,7 +62,6 @@ def get_llm_client_cached():
         log.error("Falha ao obter LLM client (API não configurada?).")
         return None
 
-# 3. Cache para criar a RAG CHAIN COMPLETA
 @st.cache_resource(show_spinner=False)
 def get_rag_chain():
     """

@@ -1,21 +1,18 @@
-# tools-p-7bpm/pages/5_Consulta_RDPM.py
-
 import streamlit as st
-# Importa as funções RAG e o caminho do PDF
 from modules.rdpm_agent import get_rag_chain, PDF_PATH
 import time
 import logging
-import os # Para obter basename do PDF
+import os 
 
-# --- Configuração da Página (PRIMEIRO COMANDO STREAMLIT) ---
+# --- Configuração da Página ---
 st.set_page_config(
     page_title="Consulta RDPM - 7ºBPM/P-6",
     page_icon="⚖️",
-    layout="centered", # Mantém centralizado para chat
+    layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# --- Estilo CSS (Revertido para o Simples Original - Adicionando Estilo Botão Voltar) ---
+# --- Estilo CSS ---
 st.write("""
 <style>
     /* Esconde Sidebar */
@@ -87,7 +84,7 @@ st.write("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Botão Voltar (MOVIDO PARA ANTES do título) ---
+# --- Botão Voltar ---
 # A estilização agora vem do CSS principal acima, usando :nth-child(1)
 if st.button("← Voltar à página inicial", key="back_button_rdpm", type='primary'):
     st.switch_page("Home.py")
@@ -96,9 +93,6 @@ if st.button("← Voltar à página inicial", key="back_button_rdpm", type='prim
 st.title("⚖️ Consulta ao RDPM/RO")
 st.caption("Assistente para tirar dúvidas sobre o Regulamento Disciplinar da Polícia Militar de Rondônia")
 
-# --- REMOVIDO: CSS Específico para o Botão Voltar que usava a key ---
-# st.markdown(""" ... """, unsafe_allow_html=True)
-
 
 # --- Inicialização da RAG Chain ---
 rag_chain = None
@@ -106,7 +100,7 @@ initialization_placeholder = st.empty()
 
 with initialization_placeholder:
     with st.spinner("Preparando assistente RDPM..."):
-        rag_chain = get_rag_chain() # Função cacheada
+        rag_chain = get_rag_chain()
 
 if rag_chain is None:
     initialization_placeholder.error("Falha ao inicializar o assistente RDPM.")
@@ -142,7 +136,6 @@ else:
 
     # <<< Chat Input FORA do container de scroll >>>
     if prompt := st.chat_input("Faça sua pergunta sobre o RDPM..."):
-        # ... (código de processamento do chat inalterado) ...
         st.session_state.rdpm_messages.append({"role": "user", "content": prompt})
         with st.spinner("Buscando e gerando resposta..."):
             answer = "Ocorreu um erro."
@@ -161,5 +154,3 @@ else:
                 "context": retrieved_docs
             })
             st.rerun()
-
-# --- REMOVIDO: Rodapé ---

@@ -1,7 +1,7 @@
 import streamlit as st
 import datetime
-from dateutil.relativedelta import relativedelta # Para adicionar anos/meses corretamente
-import pandas as pd # Para exibir as suspensões de forma organizada
+from dateutil.relativedelta import relativedelta
+import pandas as pd
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Estilos CSS (Similar às outras páginas) ---
+# --- Estilos CSS ---
 st.write("""
 <style>
     /* Esconde Sidebar */
@@ -102,7 +102,6 @@ st.write("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Botão Voltar ---
 if st.button("← Voltar à página inicial", key="back_button_prescricao", type='primary'):
     st.switch_page("Home.py")
 
@@ -185,10 +184,10 @@ if suspensao_ocorreu:
             else:
                 st.warning("Preencha as datas de início e fim da suspensão.")
 
-        # Exibir suspensões adicionadas
+        # Exibi suspensões adicionadas
         if st.session_state.suspensions:
             st.markdown("**Períodos de Suspensão Registrados:**")
-            # Usar pandas para formatar melhor
+            # Usa pandas para formatar melhor
             susp_df_data = [{"Início": s["inicio"].strftime('%d/%m/%Y'), "Fim": s["fim"].strftime('%d/%m/%Y')} for s in st.session_state.suspensions]
             susp_df = pd.DataFrame(susp_df_data)
             st.dataframe(susp_df, hide_index=True, use_container_width=True)
@@ -209,7 +208,7 @@ else:
 
 # --- Botão de Cálculo e Resultados ---
 st.markdown("---")
-results_placeholder = st.empty() # Para exibir os resultados
+results_placeholder = st.empty()
 
 if st.button("Calcular Prazo Prescricional", type="primary", use_container_width=True):
     valid_input = True
@@ -231,7 +230,7 @@ if st.button("Calcular Prazo Prescricional", type="primary", use_container_width
     if valid_input:
         prazo_base = NATUREZA_PRAZOS[natureza]
 
-        # 1. Verificar prescrição ANTES da instauração (interrupção)
+        # 1. Verifica prescrição ANTES da instauração (interrupção)
         prescricao_sem_interrupcao = data_conhecimento + prazo_base
         if data_instauracao >= prescricao_sem_interrupcao:
             results_placeholder.markdown(
@@ -245,27 +244,20 @@ if st.button("Calcular Prazo Prescricional", type="primary", use_container_width
                 """, unsafe_allow_html=True
             )
         else:
-            # 2. Calcular prazo a partir da data de instauração (interrupção)
+            # 2. Calcula prazo a partir da data de instauração (interrupção)
             prescricao_base_interrompida = data_instauracao + prazo_base
 
-            # 3. Calcular dias de suspensão
+            # 3. Calcula dias de suspensão
             total_dias_suspensao = datetime.timedelta(days=0)
             for susp in st.session_state.suspensions:
-                # Calcula a duração da suspensão (inclui o dia de início, exclui o dia de fim? Ou inclui ambos?)
-                # Vamos assumir que o prazo volta a correr NO dia seguinte ao fim da suspensão.
-                # Duração = fim - inicio + 1 dia (se inclusivo) ou fim - inicio
-                # A interpretação mais comum é que a suspensão dura (fim - inicio).days
-                # Se o processo ficou parado de 01/01 a 03/01 (3 dias), a diferença é 2 dias. Vamos somar 1.
-                # Mas o exemplo do usuário (30 dias de suspensão adiciona 30 dias) sugere diferença simples.
-                # Vamos usar a diferença simples: (fim - inicio).days. Se isso der resultados estranhos, ajustamos.
                 duracao_susp = susp["fim"] - susp["inicio"] # Isso dá um timedelta
                 if duracao_susp.days >= 0: # Garante que não seja negativo
                     total_dias_suspensao += duracao_susp # Soma os timedeltas
 
-            # 4. Calcular data final com suspensões
+            # 4. Calcula data final com suspensões
             data_final_prescricao = prescricao_base_interrompida + total_dias_suspensao
 
-            # 5. Comparar com data atual e exibir resultado
+            # 5. Compara com data atual e exibir resultado
             data_final_str = data_final_prescricao.strftime('%d/%m/%Y')
             total_dias_susp_str = total_dias_suspensao.days
 

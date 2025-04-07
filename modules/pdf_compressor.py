@@ -62,11 +62,11 @@ class PDFCompressor:
         :return: True se bem-sucedido, False caso contrário
         """
         try:
-            # Criar cópia temporária para processar
+            # Cria cópia temporária para processar
             temp_input = input_path + ".tmp.pdf"
             shutil.copy2(input_path, temp_input)
             
-            # Configurar argumentos do OCRmyPDF
+            # Configura argumentos do OCRmyPDF
             args = [
                 'ocrmypdf',            # Comando
                 '--force-ocr',         # Força OCR em todas as páginas
@@ -78,7 +78,7 @@ class PDFCompressor:
                 output_path            # Arquivo de saída
             ]
             
-            # Executar OCRmyPDF
+            # Executa OCRmyPDF
             process = subprocess.run(
                 args,
                 stdout=subprocess.PIPE, 
@@ -86,7 +86,7 @@ class PDFCompressor:
                 text=True
             )
             
-            # Limpar
+            # Limpa o arquivo temporário
             if os.path.exists(temp_input):
                 os.unlink(temp_input)
                 
@@ -108,7 +108,7 @@ class PDFCompressor:
         :param apply_ocr: Se deve aplicar OCR
         :return: Tupla (sucesso, bytes do arquivo processado, tamanho original, tamanho final)
         """
-        # Criar arquivo temporário para entrada
+        # Cria arquivo temporário para entrada
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_input:
             temp_input.write(file_bytes)
             input_path = temp_input.name
@@ -118,7 +118,6 @@ class PDFCompressor:
         final_output_path = input_path.replace('.pdf', '_final.pdf')
         
         try:
-            # Tamanho original
             original_size = len(file_bytes) / 1024 / 1024  # em MB
             
             # Etapa 1: Compressão
@@ -132,7 +131,7 @@ class PDFCompressor:
                 output_path = compressed_path
             
             if success:
-                # Ler o arquivo processado
+                # Le o arquivo processado
                 with open(output_path, 'rb') as f:
                     processed_bytes = f.read()
                 

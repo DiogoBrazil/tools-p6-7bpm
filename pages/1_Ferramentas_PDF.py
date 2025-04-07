@@ -1,5 +1,3 @@
-# tools-p-7bpm/pages/1_Ferramentas_PDF.py
-
 import streamlit as st
 from modules.pdf_transformer import PDFTransformer
 import os
@@ -8,17 +6,14 @@ import io
 import time
 import shutil
 import logging
-# from PyPDF2 import PdfReader # REMOVIDO - Não é mais necessário aqui
 
-# --- Constantes de Limite de Tamanho ---
-# Limite máximo aumentado para 500 MB
+
 MAX_SIZE_BYTES = 500 * 1024 * 1024
 COMPRESS_MIN_SIZE_BYTES = 1 * 1024 * 1024 # 1 MB (Mínimo para compressão)
 MAX_SIZE_MB = MAX_SIZE_BYTES / (1024 * 1024)
 COMPRESS_MIN_SIZE_MB = COMPRESS_MIN_SIZE_BYTES / (1024 * 1024)
 
-# --- Função de Validação ---
-# Valida APENAS o tamanho MÁXIMO GERAL
+
 def validate_file_size(uploaded_file, operation_type):
     if not uploaded_file: return False
     file_size = uploaded_file.size
@@ -34,7 +29,7 @@ st.set_page_config(
     layout="centered", initial_sidebar_state="collapsed"
 )
 
-# --- CSS Customizado (RESTAURADO) ---
+# --- CSS Customizado ---
 st.write("""
 <style>
     /* Esconde a sidebar */
@@ -112,7 +107,7 @@ operation_type = st.selectbox(
     key="operation_select"
 )
 
-# --- Lógica e UI (com limites atualizados) ---
+# --- Lógica e UI ---
 uploaded_file = None
 uploaded_files = []
 output_file_data = None
@@ -141,7 +136,7 @@ try:
                  options_placeholder.error(f"Arquivo muito pequeno ({file_size_mb:.1f} MB). A compressão só é permitida para arquivos com mais de {COMPRESS_MIN_SIZE_MB:.0f} MB.")
             else:
                 # Verifica o tamanho MÁXIMO
-                if validate_file_size(uploaded_file, operation_type): # Verifica MAX_SIZE_BYTES (500MB)
+                if validate_file_size(uploaded_file, operation_type):
                     with options_placeholder.container():
                         compression_level = st.slider(
                             "Nível de compressão (0=Menor, 4=Maior)", 0, 4, 3, key="compress_level",

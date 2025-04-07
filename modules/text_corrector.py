@@ -1,5 +1,3 @@
-# tools-p-7bpm/modules/text_corrector.py
-
 import os
 import logging
 from openai import OpenAI
@@ -35,11 +33,8 @@ class TextCorrector:
                 self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
                 log.info(f"Cliente OpenAI inicializado. Base URL: {self.base_url}, Modelo padrão: {self.model_name}")
             except Exception as e:
-                 # Captura e loga erros durante a inicialização do cliente
                  log.error(f"Erro ao inicializar cliente OpenAI com Base URL '{self.base_url}': {e}", exc_info=True)
-                 # Mantém self.client como None
         else:
-            # Loga um aviso se a chave API não for encontrada
             log.warning("API Key (OPENAI_API_KEY) não encontrada no ambiente ou arquivo .env. Funções de correção via API estarão desabilitadas.")
 
     def is_configured(self) -> bool:

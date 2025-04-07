@@ -1,17 +1,85 @@
 services:
-  ferramentas-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ferramentas-7bpm
+
+  # Serviço Traefik (Reverse Proxy e Gerenciador SSL)
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik 
+    restart: unless-stopped 
+    security_opt: # Opções de segurança
+      - no-new-privileges:true
+    # Comandos de configuração estática do Traefik
+    command:
+      - "--log.level=DEBUG" # Nível de log (DEBUG para resolução de problemas)
+      - "--api.dashboard=true" # Habilitar o dashboard de monitoramento do Traefik
+      - "--api.insecure=true" # Para testes - remova em produção
+      - "--providers.docker=true" # Habilitar Docker como provedor de configuração
+      - "--providers.docker.exposedbydefault=false" # Não expor containers por padrão (mais seguro)
+      - "--entrypoints.web.address=:80" # Ponto de entrada para tráfego HTTP na porta 80
+      - "--entrypoints.websecure.address=:443" # Ponto de entrada para tráfego HTTPS na porta 443
+      # Configuração do resolvedor de certificados Let's Encrypt (ACME)
+      - "--certificatesresolvers.myresolver.acme.email=SEU_EMAIL_AQUI@exemplo.com" # <<< SUBSTITUA PELO SEU EMAIL REAL >>>
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json" # Onde salvar os certificados dentro do container
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true" # Usar o desafio TLS para validação (mais simples)
+      # Redirecionamento global de HTTP para HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure" # Redirecionar do 'web' para 'websecure'
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https" # Usar o esquema HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true" # Usar redirecionamento permanente (301)
+    # Mapeamento de portas (Host:Container)
     ports:
-      - "8501:8501"
+      - "80:80"    # Porta HTTP
+      - "443:443"  # Porta HTTPS
+      - "8080:8080" # Porta para o dashboard do Traefik
+    # Mapeamento de volumes
     volumes:
-      - ./:/app
+      # Mapeia o diretório local 'letsencrypt' para dentro do container
+      - ./letsencrypt:/letsencrypt
+      # Mapeia o socket do Docker para que Traefik detecte outros containers (read-only)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Conecta à rede compartilhada
+    networks:
+      - webnet
+    # Labels para o dashboard do Traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.seu.subdomineo.com.br`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$xyF1cZKi$$Td9H5e6JDEDGTrzoD2qEw0" # admin:password
+
+  ferramentas-app:
+    # Configuração do build da imagem a partir do Dockerfile local
+    build:
+      context: . # Diretório atual como contexto
+      dockerfile: Dockerfile # Nome do Dockerfile
+    container_name: ferramentas-7bpm # Nome do container da aplicação
+    restart: unless-stopped # Política de reinicialização
+    # Mapeamento de volumes
+    volumes:
+      - ./:/app # Mapeia o código local para dentro do container (para desenvolvimento/atualizações fáceis)
       - ./.env:/app/.env
-    restart: unless-stopped
+    # Conecta à rede compartilhada
+    networks:
+      - webnet
     environment:
-      - STREAMLIT_SERVER_PORT=8501
-      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_PORT=8501 # Porta interna que o Streamlit usa
+      - STREAMLIT_SERVER_HEADLESS=true # Necessário para Streamlit rodar corretamente no Docker
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0 # Bind a todas as interfaces
     env_file:
       - .env
+    # Labels para configuração dinâmica do Traefik
+    labels:
+      - "traefik.enable=true"
+      # Roteador para HTTPS
+      - "traefik.http.routers.ferramentas-secure.rule=Host(`ferramentas-p6-7bpm.nexuslearn.com.br`)" # Regra de domínio
+      - "traefik.http.routers.ferramentas-secure.entrypoints=websecure" # Usa o entrypoint HTTPS
+      - "traefik.http.routers.ferramentas-secure.tls=true" # Habilita TLS (SSL)
+      - "traefik.http.routers.ferramentas-secure.tls.certresolver=myresolver" # Usa o resolvedor Let's Encrypt definido
+      # Definição do serviço interno para o Traefik
+      - "traefik.http.services.ferramentas-service.loadbalancer.server.port=8501"
+
+# Define a rede compartilhada
+networks:
+  webnet:
+    driver: bridge

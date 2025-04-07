@@ -1,17 +1,13 @@
 import streamlit as st
-from modules import media_converter # Importa o módulo atualizado
+from modules import media_converter
 import os
 import tempfile
-# import re -> REMOVIDO (não precisa mais validar URL)
 import time
 
-# --- Constantes ---
-MAX_MEDIA_SIZE_BYTES = 500 * 1024 * 1024 # 500 MB para vídeos? Ajuste conforme necessário
+MAX_MEDIA_SIZE_BYTES = 500 * 1024 * 1024
 MAX_MEDIA_SIZE_MB = MAX_MEDIA_SIZE_BYTES / (1024 * 1024)
 
-# --- YOUTUBE_REGEX REMOVIDO ---
 
-# --- Função de Validação ---
 def validate_media_file_size(uploaded_file):
     if not uploaded_file: return False
     file_size = uploaded_file.size
@@ -21,17 +17,16 @@ def validate_media_file_size(uploaded_file):
         return False
     return True
 
-# --- validate_youtube_url REMOVIDO ---
 
 # --- Configuração da Página ---
 st.set_page_config(
-    page_title="Conversor Vídeo para MP3 - 7ºBPM/P-6", # Título atualizado
+    page_title="Conversor Vídeo para MP3 - 7ºBPM/P-6",
     page_icon="🎵",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# --- CSS Customizado (mantido como antes) ---
+# --- CSS Customizado ---
 st.write("""
 <style>
     /* ... (CSS básico: sidebar, container, botão voltar) ... */
@@ -80,10 +75,7 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
-st.markdown("Converta arquivos de vídeo (MP4, AVI, MOV, etc.) para formato de áudio MP3.") # Descrição Atualizada
-
-# --- Seleção de Input REMOVIDA ---
-# input_type = st.radio(...)
+st.markdown("Converta arquivos de vídeo (MP4, AVI, MOV, etc.) para formato de áudio MP3.") 
 
 # --- Placeholders ---
 input_placeholder = st.empty()
@@ -92,7 +84,6 @@ result_placeholder = st.empty()
 
 # --- Variáveis de Controle ---
 uploaded_file = None
-# youtube_url = None -> REMOVIDO
 output_mp3_data = None
 output_filename = "audio.mp3"
 processing_triggered = False
@@ -113,10 +104,6 @@ if uploaded_file and ffmpeg_ok:
     if validate_media_file_size(uploaded_file):
         processing_triggered = button_placeholder.button("Converter Vídeo para MP3", key="convert_video_btn", use_container_width=True)
 
-# --- Lógica de YouTube REMOVIDA ---
-# elif input_type == 'Link do YouTube':
-#     ...
-
 # --- Processamento ---
 if processing_triggered and ffmpeg_ok and uploaded_file: # Garante que uploaded_file existe
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -132,7 +119,7 @@ if processing_triggered and ffmpeg_ok and uploaded_file: # Garante que uploaded_
             success, message = media_converter.convert_video_to_mp3(input_video_path, output_mp3_path)
             output_filename = f"{os.path.splitext(uploaded_file.name)[0]}.mp3"
 
-        # --- Lógica de resultado/download permanece a mesma ---
+        # --- Lógica de resultado/download ---
         if success and os.path.exists(output_mp3_path):
             result_placeholder.success(f"✅ {message}")
             with open(output_mp3_path, "rb") as f:
@@ -155,7 +142,6 @@ if output_mp3_data:
 
 # --- Rodapé ---
 st.markdown("---")
-# ... (Rodapé padrão) ...
 st.markdown("""
 <div style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e6e6e6; text-align: center; font-size: 0.9rem; color: #666;">
     <p>© 2024 - Seção de Justiça e Disciplina - 7º Batalhão de Polícia Militar</p>
